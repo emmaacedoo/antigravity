@@ -1,0 +1,62 @@
+---
+title: "Exploring Storms"
+author: "Emma"
+execute:
+  echo: false
+---
+
+```{r}
+#| label: setup
+#| message: false
+
+library(tidyverse)
+```
+
+```{r}
+#| label: storms-plot
+
+storms |>
+  filter(status %in% c("tropical depression", "tropical storm", "hurricane")) |> # Keep only the three main storm types
+  mutate(status = factor(status, levels = c("tropical depression", "tropical storm", "hurricane"))) |> # Order from weakest to strongest
+  distinct(year, name, status) |> # Keep one row per unique storm and status in each year
+  count(year, status) |> # Count the number of storms of each type per year
+  complete(year, status, fill = list(n = 0)) |> # Fill missing year/status pairs with 0 for smooth stacking
+  ggplot(aes(x = year, y = n, fill = status)) +
+  geom_area() + # Draw a stacked area chart
+  scale_fill_manual(
+    values = c(
+      "tropical depression" = "lightblue",
+      "tropical storm" = "orange",
+      "hurricane" = "darkred"
+    )
+  ) +
+  labs(
+    title = "Number of Named Storms per Year by Type",
+    x = "Year",
+    y = "Number of Storms",
+    fill = "Storm Type"
+  )
+```
+
+```{r}
+#| cache: true
+
+storms_recent <- storms |> # Save the filtered and selected tibble to storms_recent
+  filter(year >= 2000) |> # Keep observations from the year 2000 and later
+  select(year, name, status, wind, pressure) # Keep only these five columns in order
+```
+
+```{r}
+#| label: pressure-wind-plot
+
+storms_recent |>
+  ggplot(aes(x = pressure, y = wind, color = status)) + # Map pressure, wind, and status color
+  geom_point(alpha = 0.5) + # Use semi-transparent points to show overlapping observations
+  labs(
+    title = "Lower Air Pressure Corresponds to Higher Storm Wind Speeds",
+    subtitle = "Atlantic storm observations from 2000 onward by storm classification",
+    x = "Air Pressure (millibars)",
+    y = "Wind Speed (knots)",
+    color = "Storm Status"
+  )
+```
